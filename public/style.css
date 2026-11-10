@@ -11,7 +11,7 @@
   --sans: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
   --content-width: 880px;
   --gutter: clamp(15px, 4vw, 32px);
-  --header-brand-height: 72px;
+  --header-brand-height: 88px;
   --header-nav-height: 46px;
   --header-height: calc(var(--header-brand-height) + var(--header-nav-height) + env(safe-area-inset-top));
 }
@@ -446,7 +446,7 @@ a[data-opening] { cursor: progress; }
 }
 
 @media (min-width: 620px) {
-  :root { --header-brand-height: 84px; --header-nav-height: 0px; }
+  :root { --header-brand-height: 104px; --header-nav-height: 0px; }
   .site-header nav { grid-column: auto; grid-row: auto; gap: clamp(12px, 2.4vw, 31px); }
   .site-header nav a { min-height: var(--header-brand-height); }
   .site-header nav a:is(:hover, [aria-current])::after { bottom: 15px; }
