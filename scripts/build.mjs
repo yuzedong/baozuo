@@ -184,10 +184,7 @@ function layout({
           <img class="footer-logo" src="/assets/masthead/logo.png" alt="" width="715" height="656" loading="lazy">
         </a>
         <nav class="footer-links" aria-label="页脚导航">
-          <a href="${singleListPath}">单曲</a>
-          <a href="${albumListPath}">专辑</a>
-          ${demo ? '<a href="/albums/playback-demo/">播放器演示</a>' : ''}
-          <a class="footer-support" href="/support/">${icon('heart')}支持创作</a>
+          ${nav}
         </nav>
       </div>
       <small class="footer-copyright">© ${copyrightYear} ${band} · 保留所有权利</small>

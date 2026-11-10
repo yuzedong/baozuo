@@ -446,7 +446,8 @@ async function navigate(url, { push = true, scrollY = 0, link } = {}) {
     clearTimeout(deadline);
     const main = next.querySelector('main');
     const nav = next.querySelector('.site-header nav');
-    if (!response.ok || !main || !nav) {
+    const footerNav = next.querySelector('.footer-links');
+    if (!response.ok || !main || !nav || !footerNav) {
       if (push) location.assign(url);
       else location.reload();
       return;
@@ -463,6 +464,7 @@ async function navigate(url, { push = true, scrollY = 0, link } = {}) {
     for (const video of document.querySelectorAll('main video')) video.pause();
     previousMain.replaceWith(main);
     document.querySelector('.site-header nav').replaceWith(nav);
+    document.querySelector('.footer-links').replaceWith(footerNav);
     const controls = main.querySelectorAll(queueId ? '[data-album-play]' : '[data-play]');
     if (wantsPlayback && !Array.from(controls).some(matchesPlayback)) pause();
     menuButton.setAttribute('aria-expanded', 'false');
