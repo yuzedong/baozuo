@@ -364,6 +364,7 @@ for (const {
       body: `<div class="wrap ${wrapper}">
         ${beforeFeed}
         <section class="feed" aria-label="${feedLabel}">
+          ${path === '/' ? '<h2 class="mobile-feed-heading">最新发布</h2>' : ''}
           ${pageEntries.map(feedEntry).join('') || `<p class="empty">${empty}</p>`}
         </section>
         ${number < total ? `<div class="feed-more">
