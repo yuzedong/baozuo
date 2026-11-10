@@ -374,8 +374,9 @@ button.lyric-line:hover { background: var(--hover); }
   .entry-summary { font-size: .84rem; }
   .feed-entry button.entry-action:not(:disabled, [data-glyph="pause"]) { background: var(--mist); }
 
-  .song-intro { grid-template-columns: clamp(80px, 25vw, 112px) minmax(0, 1fr); gap: 14px; margin-bottom: 16px; }
-  .song-cover { border-radius: 12px; }
+  .song-intro { grid-template-columns: minmax(0, 1fr); gap: 18px; margin-bottom: 20px; }
+  .song-cover { width: min(100%, 320px); justify-self: center; border-radius: 12px; }
+  .song-description h2 { font-size: 1.16rem; }
   .song-player { margin-top: 16px; padding: 16px; border-radius: 14px; }
   .song-controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .song-controls .primary { min-height: 48px; border-radius: 9px; }
