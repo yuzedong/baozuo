@@ -410,8 +410,12 @@ a[data-opening] { cursor: progress; }
   .entry-summary { font-size: .84rem; }
   .feed-entry button.entry-action:not(:disabled, [data-glyph="pause"]) { background: var(--mist); }
 
-  .song-intro { grid-template-columns: clamp(80px, 25vw, 112px) minmax(0, 1fr); gap: 14px; margin-bottom: 16px; }
-  .song-cover { border-radius: 12px; }
+  .song-intro { display: flow-root; margin-bottom: 16px; }
+  .song-cover { float: left; width: clamp(80px, 25vw, 112px); margin-right: 14px; border-radius: 12px; }
+  .song-description p { max-width: none; }
+  .intro-preview { clear: both; margin-top: 0; padding-top: 12px; }
+  .intro-disclosure { clear: both; margin-top: 10px; }
+  .intro-disclosure summary { padding-inline: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--hover); }
   .song-player { margin-top: 16px; padding: 16px; border-radius: 14px; }
   .song-controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .song-controls .primary { min-height: 48px; border-radius: 9px; }
