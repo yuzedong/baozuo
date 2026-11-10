@@ -1,0 +1,33 @@
+{
+  "album": {
+    "id": "playback-demo",
+    "title": "播放器演示",
+    "cover": "/assets/morning.jpg",
+    "description": "本地预览专用。这里的合成音频、文字和视频用于检验播放器功能。",
+    "tracks": [
+      "demo-morning",
+      "demo-sky"
+    ]
+  },
+  "tracks": [
+    {
+      "id": "demo-morning",
+      "title": "晨光试听",
+      "duration": "0:16",
+      "audio": "/demo-media/morning.wav",
+      "video": "/demo-media/morning.mp4",
+      "videoDuration": "0:06",
+      "lyrics": "[00:00.00]第一段 · 听见晨光\n[00:04.00]第二段 · 静静聆听\n[00:08.00]第三段 · 举目望向远山\n[00:12.00]第四段 · 余音渐息",
+      "description": "点击任意一行歌词，试着跳转到对应的时间。",
+      "story": "这段旋律由程序合成，用于本地验证声音、歌词和视频之间的切换。",
+      "single": true
+    },
+    {
+      "id": "demo-sky",
+      "title": "远山试听",
+      "duration": "0:16",
+      "audio": "/demo-media/sky.wav",
+      "lyrics": "[00:00.00]第一段 · 远山\n[00:06.00]第二段 · 回声\n[00:12.00]第三段 · 静默"
+    }
+  ]
+}
