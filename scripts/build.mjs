@@ -1,10 +1,12 @@
 import { readFile, writeFile, mkdir, cp, rm, stat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { dirname, resolve, sep } from 'node:path';
 import { icon } from '../public/icons.js';
 import { posterText, renderSharePoster } from './share-poster.mjs';
 
 const demo = process.argv.includes('--demo');
 const out = resolve('dist');
+const styleVersion = createHash('sha256').update(await readFile('public/style.css')).digest('hex').slice(0, 12);
 const catalog = JSON.parse(await readFile('content/catalog.json', 'utf8'));
 const { site, tracks, albums, posts = [] } = catalog;
 const bankTransfers = site.bankTransfers || [];
@@ -138,6 +140,8 @@ function layout({
     return `<a href="${href}"${href === navPath ? ` aria-current="${current}"` : ''}>${label}</a>`;
   }).join('');
   const fullTitle = path === '/' ? '宝座乐团｜Throne Worship' : title + '｜宝座乐团';
+  const publicationClass = navPath === '/' && heroArt === 'home' ? ' publication-home'
+    : heroArt === 'detail' ? ' publication-detail' : '';
   return `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -152,7 +156,7 @@ function layout({
   <meta property="og:image" content="${esc(new URL(image, site.domain).href)}">
   <meta property="og:url" content="${esc(canonical)}">
   <link rel="icon" href="/assets/crown.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css?v=${styleVersion}">
   <script type="module" src="/app.js"></script>
 </head>
 <body>
@@ -169,7 +173,7 @@ function layout({
     </div>
   </header>
   <main id="main" tabindex="-1" data-page="${esc(path)}">
-    <header class="publication${heroArt === 'detail' ? ' publication-detail' : ''}">
+    <header class="publication${publicationClass}">
       <div class="wrap publication-copy">
         <h1>${esc(heroTitle)}</h1>
       </div>
@@ -362,7 +366,7 @@ for (const {
       body: `<div class="wrap ${wrapper}">
         ${beforeFeed}
         <section class="feed" aria-label="${feedLabel}">
-          ${path === '/' ? '<h2 class="mobile-feed-heading">最新发布</h2>' : ''}
+          ${path === '/' ? '<h2 class="home-feed-heading">最新发布</h2>' : ''}
           ${pageEntries.map(feedEntry).join('') || `<p class="empty">${empty}</p>`}
         </section>
         ${number < total ? `<div class="feed-more">
