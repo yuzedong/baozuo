@@ -149,6 +149,7 @@ p { color: var(--muted); }
 .intro-disclosure .intro-collapse, .intro-disclosure[open] .intro-expand { display: none; }
 .intro-disclosure[open] .intro-collapse { display: inline; }
 .song-detail .inner-section { margin-top: clamp(28px, 5vw, 46px); padding-top: clamp(16px, 3vw, 24px); }
+.song-detail .song-materials { border-top: 0; padding-top: 0; }
 .song-credits { display: grid; gap: 0 24px; margin: 16px 0 0; padding: 4px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--hover); font-size: .87rem; }
 .song-credits > div { display: grid; grid-template-columns: 4.6em minmax(0, 1fr); gap: 8px; padding-block: 7px; }
 .song-credits dt { color: var(--muted); }

@@ -546,7 +546,7 @@ for (const track of tracks) {
       </header>
       ${songListening(track, isSingle ? null : album)}
       ${!isSingle && story ? `<section class="inner-section prose"><h2>创作背景</h2>${textBlock(story)}</section>` : ''}
-      ${credits.length || images.length ? `<section class="inner-section"><h2>作品资料</h2>
+      ${credits.length || images.length ? `<section class="inner-section song-materials"><h2>作品资料</h2>
         ${credits.length ? `<dl class="song-credits">${credits.map(([label, value]) =>
           `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>` : ''}
         ${images.length ? `<div class="story-images">
