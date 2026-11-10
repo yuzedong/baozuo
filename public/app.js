@@ -337,6 +337,7 @@ async function initFeed(main, restoredBatches) {
   if (!more) return;
   const feed = main.querySelector('.feed');
   const message = main.querySelector('[data-feed-status]');
+  const moreLabel = more.textContent;
   const controller = new AbortController();
   let loading = false;
   let loadedBatches = 0;
@@ -352,8 +353,9 @@ async function initFeed(main, restoredBatches) {
     if (loading || more.hidden || controller.signal.aborted) return false;
     loading = true;
     observer?.unobserve(more);
+    message.textContent = '';
     more.setAttribute('aria-disabled', 'true');
-    message.textContent = '正在加载作品…';
+    more.textContent = '正在加载作品…';
     try {
       const response = await fetch(more.href, { signal: controller.signal });
       if (!response.ok) throw new Error('无法加载作品');
@@ -375,6 +377,7 @@ async function initFeed(main, restoredBatches) {
       return false;
     } finally {
       loading = false;
+      more.textContent = moreLabel;
       more.removeAttribute('aria-disabled');
     }
   }

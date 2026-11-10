@@ -369,7 +369,7 @@ for (const {
         </section>
         ${number < total ? `<div class="feed-more">
           <p data-feed-status role="status"></p>
-          <a class="button secondary" data-feed-more href="${listPagePath(path, number + 1)}">加载更多作品</a>
+          <a class="button secondary" data-feed-more aria-live="polite" href="${listPagePath(path, number + 1)}">加载更多作品</a>
         </div>` : ''}
       </div>`
     });
