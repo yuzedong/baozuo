@@ -347,6 +347,13 @@ button.lyric-line:hover { background: var(--hover); }
   font-size: .82rem;
 }
 @keyframes navigation-loading { to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .navigation-enter { animation: navigation-enter 200ms ease-out; }
+}
+@keyframes navigation-enter {
+  from { opacity: .7; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 @media (prefers-reduced-motion: reduce) {
   .navigation-feedback[data-loading]::before { animation: none; background: var(--green); }
 }

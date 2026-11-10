@@ -473,6 +473,7 @@ async function navigate(url, { push = true, scrollY = 0, link } = {}) {
     const anchor = url.hash ? document.getElementById(decodeURIComponent(url.hash.slice(1))) : null;
     if (anchor) anchor.scrollIntoView();
     else window.scrollTo(0, scrollY);
+    if (push) main.classList.add('navigation-enter');
   } catch {
     if (navigation === active) {
       if (!push || location.href === url.href) location.reload();
