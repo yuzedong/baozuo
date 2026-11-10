@@ -3,12 +3,15 @@ import { icon } from './icons.js';
 const audio = document.getElementById('site-audio');
 const status = document.querySelector('.status');
 const menuButton = document.querySelector('.header-menu');
+const navigationFeedback = document.querySelector('.navigation-feedback');
+const navigationMessage = navigationFeedback?.querySelector('span');
+const navigationError = '页面暂时打不开，请再点一次重试。';
 const lyricCache = new Map();
 let catalogRequest;
 let current;
 let queue = [];
 let queueId = '';
-let request;
+let navigation;
 let stopFeedLoading;
 let noticeTimer;
 let pendingSeek = null;
@@ -418,17 +421,36 @@ function initPage(restoredBatches = 0) {
   return initFeed(main, restoredBatches);
 }
 
-async function navigate(url, push = true, scrollY = 0) {
-  request?.abort();
+async function navigate(url, { push = true, scrollY = 0, link } = {}) {
+  if (push && navigation?.href === url.href) return;
+  navigation?.controller.abort();
+  navigation?.link?.removeAttribute('data-opening');
   const controller = new AbortController();
-  request = controller;
+  const active = { controller, href: url.href, link };
+  navigation = active;
+  if (status.textContent === navigationError) {
+    status.hidden = true;
+    status.textContent = '';
+  }
+  link?.setAttribute('data-opening', '');
+  navigationFeedback?.setAttribute('data-loading', '');
+  const showMessage = setTimeout(() => {
+    if (navigation === active && navigationMessage) navigationMessage.textContent = '正在打开页面…';
+  }, 350);
+  const deadline = setTimeout(() => controller.abort(), 15000);
   try {
     const response = await fetch(url.pathname + url.search, { signal: controller.signal });
-    if (!response.ok) throw new Error('页面不可用');
+    if (response.status >= 500) throw new Error('页面暂时不可用');
     const next = new DOMParser().parseFromString(await response.text(), 'text/html');
-    if (controller.signal.aborted) return;
+    if (navigation !== active) return;
+    clearTimeout(deadline);
     const main = next.querySelector('main');
-    if (!main) throw new Error('缺少页面内容');
+    const nav = next.querySelector('.site-header nav');
+    if (!response.ok || !main || !nav) {
+      if (push) location.assign(url);
+      else location.reload();
+      return;
+    }
     const previousMain = document.querySelector('main');
     if (push) {
       history.replaceState({
@@ -440,21 +462,30 @@ async function navigate(url, push = true, scrollY = 0) {
     stopFeedLoading = undefined;
     for (const video of document.querySelectorAll('main video')) video.pause();
     previousMain.replaceWith(main);
-    document.querySelector('.site-header nav').replaceWith(next.querySelector('.site-header nav'));
+    document.querySelector('.site-header nav').replaceWith(nav);
     const controls = main.querySelectorAll(queueId ? '[data-album-play]' : '[data-play]');
     if (wantsPlayback && !Array.from(controls).some(matchesPlayback)) pause();
     menuButton.setAttribute('aria-expanded', 'false');
     document.title = next.title;
     await initPage(push ? 0 : history.state?.feedBatches);
-    if (controller.signal.aborted) return;
+    if (navigation !== active) return;
     main.focus({ preventScroll: true });
     const anchor = url.hash ? document.getElementById(decodeURIComponent(url.hash.slice(1))) : null;
     if (anchor) anchor.scrollIntoView();
     else window.scrollTo(0, scrollY);
   } catch {
-    if (!controller.signal.aborted) {
-      if (push) location.assign(url);
-      else location.reload();
+    if (navigation === active) {
+      if (!push || location.href === url.href) location.reload();
+      else notify(navigationError);
+    }
+  } finally {
+    clearTimeout(showMessage);
+    clearTimeout(deadline);
+    if (navigation === active) {
+      navigation = undefined;
+      link?.removeAttribute('data-opening');
+      navigationFeedback?.removeAttribute('data-loading');
+      if (navigationMessage) navigationMessage.textContent = '';
     }
   }
 }
@@ -543,7 +574,7 @@ document.addEventListener('click', async event => {
   if (url.href === location.href) {
     window.scrollTo(0, 0);
   } else {
-    void navigate(url);
+    void navigate(url, { link: anchor });
   }
 });
 document.addEventListener('keydown', event => {
@@ -555,7 +586,7 @@ document.addEventListener('keydown', event => {
 });
 history.scrollRestoration = 'manual';
 window.addEventListener('popstate', event => {
-  void navigate(new URL(location.href), false, event.state?.scrollY);
+  void navigate(new URL(location.href), { push: false, scrollY: event.state?.scrollY });
 });
 document.addEventListener('input', event => {
   const progress = event.target;

@@ -194,6 +194,7 @@ function layout({
     </div>
   </footer>
   <audio id="site-audio" preload="metadata" hidden></audio>
+  <div class="navigation-feedback" role="status"><span></span></div>
   <div class="status" role="status" hidden></div>
 </body>
 </html>`;
