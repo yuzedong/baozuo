@@ -480,7 +480,6 @@ function donationSection(statement = '') {
     <a class="donation-banner" href="/assets/donation/banner.jpg" target="_blank" rel="noopener" aria-label="查看乐团捐赠图原图">
       <img src="/assets/donation/banner.jpg" alt="支持宝座乐团的微信赞赏码" width="900" height="500" loading="lazy">
     </a>
-    ${link('/support/', '支持我们', 'button secondary', 'heart')}
   </section>`;
 }
 

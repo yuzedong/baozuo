@@ -159,7 +159,6 @@ p { color: var(--muted); }
 .donation-section p { max-width: 46em; margin-top: 9px; }
 .donation-banner { display: block; width: min(100%, 620px); margin: 16px auto 0; }
 .donation-banner img { width: 100%; height: auto; border-radius: 8px; }
-.donation-section .button { margin-top: 16px; }
 .share-section {
   display: grid;
   gap: clamp(18px, 4vw, 38px);
