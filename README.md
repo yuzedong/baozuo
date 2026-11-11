@@ -54,4 +54,16 @@ npm run preview  # 预览上一次构建的 dist/
 
 [Cloudflare Pages Git 集成](https://developers.cloudflare.com/pages/get-started/git-integration/) · [绑定自定义域名](https://developers.cloudflare.com/pages/configuration/custom-domains/)
 
+## 香港服务器自动发布
+
+GitHub Actions 在 `main` 上构建静态文件，通过 SSH 上传到 Linux 服务器。Nginx 从 `/var/www/baozuo/current` 读取网站。部署脚本先检查新版本，再原子切换 `current` 链接，旧版本保存在 `releases/`。
+
+1. 在香港服务器上准备 Nginx 和一个普通 SSH 用户。以管理员身份执行 `sudo install -d -o deploy -g deploy -m 755 /var/www/baozuo /var/www/baozuo/releases`，再执行 `sudo install -d -o deploy -g deploy -m 700 /var/www/baozuo/incoming`。将命令中的 `deploy` 换成实际的发布用户及其用户组。
+2. 将 `deploy/baozuo.nginx.conf` 加到 Nginx 的站点配置中，按实际测试域名调整 `server_name`。用 `sudo nginx -t` 检查，通过后重载 Nginx。测试域名使用直连服务器的 DNS 记录，配置 HTTPS 后再做浏览器验证。
+3. 给发布用户配置专用 SSH 公钥。在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 中，将私钥保存为 `HK_SSH_KEY`，将经服务器管理员核对的 SSH 主机公钥记录保存为 `HK_SSH_KNOWN_HOSTS`。如果使用非 22 端口，主机记录使用 `[主机名或 IP]:端口`。
+4. 在同一页面添加变量 `HK_SSH_HOST`（服务器 IP 或主机名）、`HK_SSH_USER`（发布用户）、`HK_SSH_PORT`（可选，默认 22）。设置 `HK_DEPLOY_ENABLED=true` 后，在 **Actions → Deploy to Hong Kong** 手动触发首次部署。此后推送 `main` 会自动发布。
+5. 用测试域名验证首页、单曲和专辑详情、加载更多、音视频及 HTTPS。七牛启用防盗链或跨域限制时，把测试域名加入相应规则。验证通过后再调整正式域名的解析和 Nginx 证书。
+
+如需回滚，以发布用户在 `/var/www/baozuo` 内执行 `ln -s releases/<已验证版本目录> .rollback`，再执行 `mv -Tf .rollback current`。每个版本会占用一份静态文件的空间，可定期清理不再使用的旧版本。
+
 透明 Logo 位于 `public/assets/logo.png`。网站使用的浅绿色春日风景配图位于 `public/assets/spring.jpg`。

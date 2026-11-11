@@ -1,0 +1,57 @@
+name: Deploy to Hong Kong
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hong-kong-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' && vars.HK_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Upload and activate release
+        env:
+          SSH_HOST: ${{ vars.HK_SSH_HOST }}
+          SSH_USER: ${{ vars.HK_SSH_USER }}
+          SSH_PORT: ${{ vars.HK_SSH_PORT || '22' }}
+          SSH_KEY: ${{ secrets.HK_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.HK_SSH_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          : "${SSH_HOST:?Set HK_SSH_HOST}"
+          : "${SSH_USER:?Set HK_SSH_USER}"
+          : "${SSH_KEY:?Set HK_SSH_KEY}"
+          : "${SSH_KNOWN_HOSTS:?Set HK_SSH_KNOWN_HOSTS}"
+          workdir=$(mktemp -d)
+          trap 'rm -rf -- "$workdir"' EXIT
+          umask 077
+          printf '%s\n' "$SSH_KEY" > "$workdir/key"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$workdir/known_hosts"
+          unset SSH_KEY SSH_KNOWN_HOSTS
+          options=(-i "$workdir/key" -o IdentitiesOnly=yes -o BatchMode=yes
+                   -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$workdir/known_hosts"
+                   -o ConnectTimeout=15)
+          release="$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          target="$SSH_USER@$SSH_HOST"
+          tar -C dist --exclude='./_headers' -czf "$workdir/site.tar.gz" .
+          scp -P "$SSH_PORT" "${options[@]}" "$workdir/site.tar.gz" \
+            "$target:/var/www/baozuo/incoming/$release.tar.gz"
+          ssh -p "$SSH_PORT" "${options[@]}" "$target" bash -s -- "$release" < deploy/activate.sh
