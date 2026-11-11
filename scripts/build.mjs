@@ -39,12 +39,18 @@ async function codeAvailable(file, contents) {
       });
       const type = response.headers.get('content-type') || '';
       const cors = response.headers.get('access-control-allow-origin');
-      return response.ok && (file.endsWith('.css') ? /^text\/css\b/i.test(type)
-        : /^(application|text)\/(java|ecma)script\b/i.test(type) && (cors === '*' || cors === origin))
-        && (await response.text()) === contents;
+      const validType = file.endsWith('.css') ? /^text\/css\b/i.test(type)
+        : /^(application|text)\/(java|ecma)script\b/i.test(type);
+      const validCors = !file.endsWith('.js') || cors === '*' || cors === origin;
+      const sameContent = response.ok && (await response.text()) === contents;
+      if (!validType || !validCors || !sameContent) {
+        console.warn(`七牛校验未通过：${file}（${origin}，HTTP ${response.status}，类型 ${type || '缺失'}，跨域 ${cors || '缺失'}，内容一致 ${sameContent}）`);
+      }
+      return validType && validCors && sameContent;
     }));
     return results.every(Boolean);
-  } catch {
+  } catch (error) {
+    console.warn(`七牛校验请求失败：${file}（${error.message}）`);
     return false;
   }
 }
