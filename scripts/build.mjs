@@ -167,7 +167,6 @@ function layout({
       <a class="brand" href="/" aria-label="宝座乐团首页">
         <img class="header-logo" src="/assets/masthead/logo.png" alt="" width="715" height="656">
       </a>
-      <button type="button" class="header-menu" aria-label="菜单" aria-expanded="false" aria-controls="main-nav">${icon('menu')}</button>
       <nav id="main-nav" aria-label="主要导航">
         ${nav}
       </nav>

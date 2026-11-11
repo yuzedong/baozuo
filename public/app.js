@@ -2,7 +2,12 @@ import { icon } from './icons.js';
 
 const audio = document.getElementById('site-audio');
 const status = document.querySelector('.status');
-const menuButton = document.querySelector('.header-menu');
+const siteHeader = document.querySelector('.site-header');
+function updateHeader() {
+  siteHeader.classList.toggle('is-scrolled', window.scrollY > 64);
+}
+window.addEventListener('scroll', updateHeader, { passive: true });
+updateHeader();
 const navigationFeedback = document.querySelector('.navigation-feedback');
 const navigationMessage = navigationFeedback?.querySelector('span');
 const navigationError = '页面暂时打不开，请再点一次重试。';
@@ -518,7 +523,6 @@ async function navigate(url, { push = true, scrollY = 0, link } = {}) {
     document.querySelector('.footer-links').replaceWith(footerNav);
     const controls = main.querySelectorAll(queueId ? '[data-album-play]' : '[data-play]');
     if (wantsPlayback && !Array.from(controls).some(matchesPlayback)) pause();
-    menuButton.setAttribute('aria-expanded', 'false');
     document.title = next.title;
     await initPage(push ? 0 : history.state?.feedBatches);
     if (navigation !== active) return;
@@ -526,6 +530,7 @@ async function navigate(url, { push = true, scrollY = 0, link } = {}) {
     const anchor = url.hash ? document.getElementById(decodeURIComponent(url.hash.slice(1))) : null;
     if (anchor) anchor.scrollIntoView();
     else window.scrollTo(0, scrollY);
+    updateHeader();
     if (push) main.classList.add('navigation-enter');
   } catch {
     if (navigation === active) {
@@ -576,15 +581,6 @@ document.addEventListener('click', async event => {
   const searchPanel = document.querySelector('[data-search-panel]:not([hidden])');
   if (searchPanel && !searchPanel.closest('form').contains(event.target)) searchPanel.hidden = true;
 
-  const menuOpen = menuButton.getAttribute('aria-expanded') === 'true';
-  if (menuButton.contains(event.target)) {
-    menuButton.setAttribute('aria-expanded', String(!menuOpen));
-    return;
-  }
-  if (menuOpen && (!event.target.closest('.site-header') || event.target.closest('#main-nav a'))) {
-    menuButton.setAttribute('aria-expanded', 'false');
-  }
-
   const savePoster = event.target.closest('[data-save-poster]');
   if (savePoster) {
     void downloadPoster(savePoster);
@@ -631,13 +627,6 @@ document.addEventListener('click', async event => {
     void navigate(url, { link: anchor });
   }
 });
-document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !event.defaultPrevented
-    && menuButton.getAttribute('aria-expanded') === 'true' && menuButton.getClientRects().length) {
-    menuButton.setAttribute('aria-expanded', 'false');
-    menuButton.focus();
-  }
-});
 history.scrollRestoration = 'manual';
 window.addEventListener('popstate', event => {
   void navigate(new URL(location.href), { push: false, scrollY: event.state?.scrollY });
@@ -676,5 +665,4 @@ if ('mediaSession' in navigator) {
 }
 
 void catalog().catch(() => {});
-document.documentElement.classList.add('menu-ready');
 void initPage();
