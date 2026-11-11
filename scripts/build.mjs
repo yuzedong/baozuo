@@ -14,10 +14,50 @@ const imageUrl = source => imageCdnEnabled && Object.hasOwn(cdnImages, source)
 const style = (await readFile('public/style.css', 'utf8')).replace(
   /url\('([^']+)'\)/g, (_, source) => `url('${imageUrl(source)}')`
 );
-const styleVersion = createHash('sha256').update(style).digest('hex').slice(0, 12);
-const appVersion = createHash('sha256').update(await readFile('public/app.js')).digest('hex').slice(0, 12);
+const version = content => createHash('sha256').update(content).digest('hex').slice(0, 12);
+const styleVersion = version(style);
+const app = await readFile('public/app.js', 'utf8');
+const appVersion = version(app);
+const icons = await readFile('public/icons.js', 'utf8');
+const iconsFile = `icons.${version(icons)}.js`;
+const cdnApp = app.replace("from './icons.js'", `from './${iconsFile}'`);
+const styleFile = `style.${styleVersion}.css`;
+const appFile = `app.${version(cdnApp)}.js`;
+const codeAssets = { [styleFile]: style, [appFile]: cdnApp, [iconsFile]: icons };
 const catalog = JSON.parse(await readFile('content/catalog.json', 'utf8'));
 const { site, tracks, albums, posts = [] } = catalog;
+
+async function codeAvailable(file, contents) {
+  const origin = new URL(site.domain).origin;
+  const origins = file.endsWith('.js') ? [origin, origin.replace('://', '://www.')] : [origin];
+  try {
+    const results = await Promise.all(origins.map(async origin => {
+      const response = await fetch(new URL('code/' + file, imageCdnBase), {
+        headers: { Origin: origin, Referer: origin + '/' },
+        signal: AbortSignal.timeout(6000)
+      });
+      const type = response.headers.get('content-type') || '';
+      const cors = response.headers.get('access-control-allow-origin');
+      return response.ok && (file.endsWith('.css') ? /^text\/css\b/i.test(type)
+        : /^(application|text)\/(java|ecma)script\b/i.test(type) && (cors === '*' || cors === origin))
+        && (await response.text()) === contents;
+    }));
+    return results.every(Boolean);
+  } catch {
+    return false;
+  }
+}
+
+let stylesheetUrl = `/style.css?v=${styleVersion}`;
+let scriptUrl = `/app.js?v=${appVersion}`;
+if (!demo && process.env.BAOZUO_CODE_CDN_ENABLED === 'true') {
+  const [hasStyle, hasApp, hasIcons] = await Promise.all(
+    Object.entries(codeAssets).map(([file, contents]) => codeAvailable(file, contents))
+  );
+  if (hasStyle) stylesheetUrl = new URL('code/' + styleFile, imageCdnBase).href;
+  if (hasApp && hasIcons) scriptUrl = new URL('code/' + appFile, imageCdnBase).href;
+  console.log(`CSS: ${hasStyle ? '七牛 CDN' : '本站'}，JavaScript: ${hasApp && hasIcons ? '七牛 CDN' : '本站'}`);
+}
 const bankTransfers = site.bankTransfers || [];
 if (demo) {
   const example = JSON.parse(await readFile('content/demo.json', 'utf8'));
@@ -165,8 +205,8 @@ function layout({
   <meta property="og:image" content="${esc(new URL(imageUrl(image), site.domain).href)}">
   <meta property="og:url" content="${esc(canonical)}">
   <link rel="icon" href="${esc(imageUrl('/assets/crown.svg'))}" type="image/svg+xml">
-  <link rel="stylesheet" href="/style.css?v=${styleVersion}">
-  <script type="module" src="/app.js?v=${appVersion}"></script>
+  <link rel="stylesheet" href="${stylesheetUrl}">
+  <script type="module" src="${scriptUrl}"></script>
 </head>
 <body>
   <a class="skip" href="#main">跳至内容</a>
@@ -643,6 +683,10 @@ pages.push({
 await rm(out, { recursive: true, force: true });
 await cp('public', out, { recursive: true });
 await writeFile(out + '/style.css', style);
+await mkdir(out + '/site-static/code', { recursive: true });
+for (const [file, contents] of Object.entries(codeAssets)) {
+  await writeFile(out + '/site-static/code/' + file, contents);
+}
 for (const [src, svg] of sharePosters) {
   const file = out + src;
   await mkdir(dirname(file), { recursive: true });

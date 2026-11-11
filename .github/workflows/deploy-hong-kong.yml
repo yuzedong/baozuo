@@ -29,6 +29,7 @@ jobs:
       - run: npm run check
         env:
           BAOZUO_IMAGE_CDN_ENABLED: ${{ vars.BAOZUO_IMAGE_CDN_ENABLED }}
+          BAOZUO_CODE_CDN_ENABLED: ${{ vars.BAOZUO_CODE_CDN_ENABLED }}
       - name: Upload and activate release
         env:
           SSH_HOST: ${{ vars.HK_SSH_HOST }}
