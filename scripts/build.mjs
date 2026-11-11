@@ -6,7 +6,15 @@ import { posterText, renderSharePoster } from './share-poster.mjs';
 
 const demo = process.argv.includes('--demo');
 const out = resolve('dist');
-const styleVersion = createHash('sha256').update(await readFile('public/style.css')).digest('hex').slice(0, 12);
+const cdnImages = JSON.parse(await readFile('content/cdn-images.json', 'utf8'));
+const imageCdnEnabled = process.env.BAOZUO_IMAGE_CDN_ENABLED === 'true';
+const imageCdnBase = 'https://baozuo.njwsp.com/site-static/';
+const imageUrl = source => imageCdnEnabled && Object.hasOwn(cdnImages, source)
+  ? new URL(cdnImages[source], imageCdnBase).href : source;
+const style = (await readFile('public/style.css', 'utf8')).replace(
+  /url\('([^']+)'\)/g, (_, source) => `url('${imageUrl(source)}')`
+);
+const styleVersion = createHash('sha256').update(style).digest('hex').slice(0, 12);
 const appVersion = createHash('sha256').update(await readFile('public/app.js')).digest('hex').slice(0, 12);
 const catalog = JSON.parse(await readFile('content/catalog.json', 'utf8'));
 const { site, tracks, albums, posts = [] } = catalog;
@@ -91,7 +99,7 @@ for (const item of resources) {
     if (!file.startsWith(publicRoot + sep) || !(await stat(file)).isFile()) throw new Error('找不到资源 ' + url);
   }
 }
-const cover = (item, cls = '', eager = false) => `<img class="${cls}" src="${esc(item.cover === '/assets/songs/joyful-song/cover.png' ? '/assets/songs/joyful-song/cover.jpg' : item.cover || '/assets/spring.jpg')}" alt="" ${eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`;
+const cover = (item, cls = '', eager = false) => `<img class="${cls}" src="${esc(imageUrl(item.cover === '/assets/songs/joyful-song/cover.png' ? '/assets/songs/joyful-song/cover.jpg' : item.cover || '/assets/spring.jpg'))}" alt="" ${eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`;
 const link = (href, label, cls = 'button secondary', glyph = 'arrow') => `<a class="${cls}" href="${esc(href)}">${esc(label)} ${icon(glyph)}</a>`;
 const outside = (href, label) => `<a class="button secondary" href="${esc(href)}" target="_blank" rel="noopener">${esc(label)} ${icon('external')}</a>`;
 const play = (track, album = '', label = '播放', cls = 'button primary', { wholeAlbum = false, content } = {}) => {
@@ -102,7 +110,7 @@ const play = (track, album = '', label = '播放', cls = 'button primary', { who
 const textBlock = value => value.split(/\n+/).filter(Boolean).map(line => `<p>${esc(line)}</p>`).join('');
 const date = value => value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(value)) : '';
 const albumMeta = album => [album.date?.slice(0, 4) || album.year, '专辑', album.tracks.length + ' 首歌曲'].filter(Boolean).join('　·　');
-const avatar = size => `<span class="avatar"><img src="/assets/logo.png" alt="" width="${size}" height="${size}"></span>`;
+const avatar = size => `<span class="avatar"><img src="${esc(imageUrl('/assets/logo.png'))}" alt="" width="${size}" height="${size}"></span>`;
 const dateTag = value => value ? `<time datetime="${value}">${date(value)}</time>` : '';
 
 function timeline(track, { inAlbum = false } = {}) {
@@ -154,9 +162,9 @@ function layout({
   ${error || demo ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${esc(canonical)}">`}
   <meta property="og:title" content="${esc(fullTitle)}">
   <meta property="og:description" content="${esc(description)}">
-  <meta property="og:image" content="${esc(new URL(image, site.domain).href)}">
+  <meta property="og:image" content="${esc(new URL(imageUrl(image), site.domain).href)}">
   <meta property="og:url" content="${esc(canonical)}">
-  <link rel="icon" href="/assets/crown.svg" type="image/svg+xml">
+  <link rel="icon" href="${esc(imageUrl('/assets/crown.svg'))}" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css?v=${styleVersion}">
   <script type="module" src="/app.js?v=${appVersion}"></script>
 </head>
@@ -165,7 +173,7 @@ function layout({
   <header class="site-header">
     <div class="wrap header-inner">
       <a class="brand" href="/" aria-label="宝座乐团首页">
-        <img class="header-logo" src="/assets/masthead/logo.png" alt="" width="715" height="656">
+        <img class="header-logo" src="${esc(imageUrl('/assets/masthead/logo.png'))}" alt="" width="715" height="656">
       </a>
       <nav id="main-nav" aria-label="主要导航">
         ${nav}
@@ -177,7 +185,7 @@ function layout({
       <div class="wrap publication-copy">
         <h1>${esc(heroTitle)}</h1>
       </div>
-      <img class="publication-art" src="/assets/masthead/${heroArt}.jpg" alt="" fetchpriority="high">
+      <img class="publication-art" src="${esc(imageUrl(`/assets/masthead/${heroArt}.jpg`))}" alt="" fetchpriority="high">
     </header>
     ${body}
   </main>
@@ -185,7 +193,7 @@ function layout({
     <div class="wrap footer-inner">
       <div class="footer-main">
         <a class="brand" href="/" aria-label="宝座乐团首页">
-          <img class="footer-logo" src="/assets/masthead/logo.png" alt="" width="715" height="656" loading="lazy">
+          <img class="footer-logo" src="${esc(imageUrl('/assets/masthead/logo.png'))}" alt="" width="715" height="656" loading="lazy">
         </a>
         <nav class="footer-links" aria-label="页脚导航">
           ${nav}
@@ -460,7 +468,7 @@ for (const album of albums) {
 }
 
 function video(track) {
-  return `<video controls playsinline preload="none" src="${esc(track.video)}" poster="${esc(track.cover)}" aria-label="${esc(track.title)}视频"></video><p class="media-error" role="status" hidden>视频暂时无法播放，请稍后重试。</p>`;
+  return `<video controls playsinline preload="none" src="${esc(track.video)}" poster="${esc(imageUrl(track.cover))}" aria-label="${esc(track.title)}视频"></video><p class="media-error" role="status" hidden>视频暂时无法播放，请稍后重试。</p>`;
 }
 
 function songListening(track, album) {
@@ -484,8 +492,8 @@ function donationSection(statement = '') {
   return `<section class="donation-section prose">
     <h2>${statement ? '乐团声明' : '支持乐团'}</h2>
     ${textBlock(statement)}
-    <a class="donation-banner" href="/assets/donation/banner.jpg" target="_blank" rel="noopener" aria-label="查看乐团捐赠图原图">
-      <img src="/assets/donation/banner.jpg" alt="支持宝座乐团的微信赞赏码" width="900" height="500" loading="lazy">
+    <a class="donation-banner" href="${esc(imageUrl('/assets/donation/banner.jpg'))}" target="_blank" rel="noopener" aria-label="查看乐团捐赠图原图">
+      <img src="${esc(imageUrl('/assets/donation/banner.jpg'))}" alt="支持宝座乐团的微信赞赏码" width="900" height="500" loading="lazy">
     </a>
   </section>`;
 }
@@ -496,9 +504,9 @@ function donationCards() {
     const payment = site.donations[id];
     return `<section class="support-method">
       <h3>${label}</h3>
-      ${payment.qr ? `<a class="support-qr" href="${esc(payment.qr)}" target="_blank" rel="noopener" aria-label="查看${label}收款二维码原图">
+      ${payment.qr ? `<a class="support-qr" href="${esc(imageUrl(payment.qr))}" target="_blank" rel="noopener" aria-label="查看${label}收款二维码原图">
         <span class="support-qr-preview">
-          <img src="${esc(payment.qr)}" alt="${label}收款二维码"
+          <img src="${esc(imageUrl(payment.qr))}" alt="${label}收款二维码"
             width="${esc(payment.qrWidth || 224)}" height="${esc(payment.qrHeight || 224)}" loading="lazy">
         </span>
         <span class="support-qr-label">查看原图 ${icon('external')}</span>
@@ -556,8 +564,8 @@ for (const track of tracks) {
           ${images.map(({ src, title, width, height }) => {
             const size = Number.isInteger(width) && width > 0 && Number.isInteger(height) && height > 0
               ? ` width="${width}" height="${height}"` : '';
-            return `<a class="story-image" href="${esc(src)}" target="_blank" rel="noopener" aria-label="查看${esc(title)}原图">
-              <img src="${esc(src)}" alt="${esc(title)}"${size} loading="lazy" decoding="async">
+            return `<a class="story-image" href="${esc(imageUrl(src))}" target="_blank" rel="noopener" aria-label="查看${esc(title)}原图">
+              <img src="${esc(imageUrl(src))}" alt="${esc(title)}"${size} loading="lazy" decoding="async">
             </a>`;
           }).join('')}
         </div>` : ''}
@@ -607,7 +615,7 @@ pages.push({
       <p>四、以乐扬爱。向世界传递真善美。</p>
     </section>
     ${link(singleListPath, '浏览音乐作品', 'button primary')}
-    <img src="/assets/spring.jpg" alt="远山前的绿色草地与白色野花" width="1400" height="933">
+    <img src="${esc(imageUrl('/assets/spring.jpg'))}" alt="远山前的绿色草地与白色野花" width="1400" height="933">
   </div>`
 }, {
   path: '/support/', title: '支持我们', description: '通过微信、支付宝或银行转账支持宝座乐团的原创敬拜音乐。',
@@ -634,6 +642,7 @@ pages.push({
 
 await rm(out, { recursive: true, force: true });
 await cp('public', out, { recursive: true });
+await writeFile(out + '/style.css', style);
 for (const [src, svg] of sharePosters) {
   const file = out + src;
   await mkdir(dirname(file), { recursive: true });
@@ -657,7 +666,10 @@ await writeFile(out + '/404.html', layout({
   path: '/404/', title: '页面未找到', description: '页面未找到', error: true,
   body: `<div class="wrap section interior">${link('/music/', '查看音乐作品', 'button primary')}</div>`
 }));
-await writeFile(out + '/catalog.json', JSON.stringify({ tracks, albums }));
+await writeFile(out + '/catalog.json', JSON.stringify({
+  tracks: tracks.map(track => ({ ...track, cover: imageUrl(track.cover) })),
+  albums: albums.map(album => ({ ...album, cover: imageUrl(album.cover) }))
+}));
 if (!demo) {
   await writeFile(out + '/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pages.map(page => `<url><loc>${esc(new URL(page.path, site.domain).href)}</loc></url>`).join('')}</urlset>\n`);
   await writeFile(out + '/robots.txt', `User-agent: *\nAllow: /\nSitemap: ${new URL('/sitemap.xml', site.domain)}\n`);

@@ -42,6 +42,8 @@ npm run preview  # 预览上一次构建的 dist/
 
 `audio`、`video`、`cover`、`lrc` 和收款码支持完整 HTTPS 地址。若多个文件使用同一个 CDN 前缀，可设置 `site.mediaBase`，例如 `https://media.example.com/worship/`，随后填写相对路径，例如 `music/song.mp3`。站点自带资源放在 `public/`，并使用 `/assets/...` 等根路径。
 
+`content/cdn-images.json` 记录迁移图片的原地址和七牛对象键。上传时将对象键放在目标空间的 `site-static/` 前缀下。确认对应 URL 可以访问后，在 GitHub 仓库设置变量 `BAOZUO_IMAGE_CDN_ENABLED=true`，重新运行香港发布工作流。该变量也可用于本地构建。新增图片可直接填写上传后的七牛地址。
+
 音视频需使用浏览器可访问的地址。配置防盗链时允许正式域名以及实际使用的测试域名。确认 CDN 返回正确的媒体类型，并支持字节范围请求 `206 Partial Content`，以便 iOS 播放和拖动进度。跨域 LRC 通过浏览器读取，七牛需返回允许站点来源的 `Access-Control-Allow-Origin` 响应头。七牛密钥和私有签名生成逻辑应留在服务器端。[七牛 CDN HTTPS 配置](https://developer.qiniu.com/fusion/4952/https-configuration)
 
 ## 香港服务器自动发布
