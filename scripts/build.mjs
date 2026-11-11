@@ -7,6 +7,7 @@ import { posterText, renderSharePoster } from './share-poster.mjs';
 const demo = process.argv.includes('--demo');
 const out = resolve('dist');
 const styleVersion = createHash('sha256').update(await readFile('public/style.css')).digest('hex').slice(0, 12);
+const appVersion = createHash('sha256').update(await readFile('public/app.js')).digest('hex').slice(0, 12);
 const catalog = JSON.parse(await readFile('content/catalog.json', 'utf8'));
 const { site, tracks, albums, posts = [] } = catalog;
 const bankTransfers = site.bankTransfers || [];
@@ -90,7 +91,7 @@ for (const item of resources) {
     if (!file.startsWith(publicRoot + sep) || !(await stat(file)).isFile()) throw new Error('找不到资源 ' + url);
   }
 }
-const cover = (item, cls = '', eager = false) => `<img class="${cls}" src="${esc(item.cover || '/assets/spring.jpg')}" alt="" ${eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`;
+const cover = (item, cls = '', eager = false) => `<img class="${cls}" src="${esc(item.cover === '/assets/songs/joyful-song/cover.png' ? '/assets/songs/joyful-song/cover.jpg' : item.cover || '/assets/spring.jpg')}" alt="" ${eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`;
 const link = (href, label, cls = 'button secondary', glyph = 'arrow') => `<a class="${cls}" href="${esc(href)}">${esc(label)} ${icon(glyph)}</a>`;
 const outside = (href, label) => `<a class="button secondary" href="${esc(href)}" target="_blank" rel="noopener">${esc(label)} ${icon('external')}</a>`;
 const play = (track, album = '', label = '播放', cls = 'button primary', { wholeAlbum = false, content } = {}) => {
@@ -157,7 +158,7 @@ function layout({
   <meta property="og:url" content="${esc(canonical)}">
   <link rel="icon" href="/assets/crown.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css?v=${styleVersion}">
-  <script type="module" src="/app.js"></script>
+  <script type="module" src="/app.js?v=${appVersion}"></script>
 </head>
 <body>
   <a class="skip" href="#main">跳至内容</a>
@@ -343,6 +344,7 @@ const entriesPerPage = 8;
 const listPagePath = (path, number) => number === 1 ? path : `${path}page/${number}/`;
 
 const pages = [];
+const feedBatches = [];
 const lists = [
   {
     path: '/', label: '首页', feedLabel: '最新发布', entries: feed, empty: '内容整理中。',
@@ -360,11 +362,13 @@ for (const {
   for (let number = 1; number <= total; number++) {
     const start = (number - 1) * entriesPerPage;
     const pageEntries = entries.slice(start, start + entriesPerPage);
+    feedBatches.push({ path: listPagePath(path, number), entries: pageEntries.map(feedEntry).join(''),
+      next: number < total ? listPagePath(path, number + 1) : null });
     pages.push({
       path: listPagePath(path, number), navPath: path,
       title: number === 1 ? label : `${label} · 第 ${number} 页`, description, heroTitle,
       body: `<div class="wrap ${wrapper}">
-        ${beforeFeed}
+        ${number === 1 ? beforeFeed : ''}
         <section class="feed" aria-label="${feedLabel}">
           ${path === '/' ? '<h2 class="home-feed-heading">最新发布</h2>' : ''}
           ${pageEntries.map(feedEntry).join('') || `<p class="empty">${empty}</p>`}
@@ -639,6 +643,11 @@ for (const [src, svg] of sharePosters) {
 if (demo) {
   const { generateDemo } = await import('./demo.mjs');
   await generateDemo(out);
+}
+for (const batch of feedBatches) {
+  const file = out + batch.path + 'feed.json';
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(file, JSON.stringify({ html: batch.entries, next: batch.next }));
 }
 for (const page of pages) {
   const file = out + page.path + 'index.html';

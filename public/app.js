@@ -32,6 +32,38 @@ function catalog() {
   return catalogRequest;
 }
 
+// Keep a small cache of pages the reader is about to open.
+const pageRequests = new Map();
+function requestPage(url) {
+  const key = url.pathname + url.search;
+  if (!pageRequests.has(key)) {
+    const controller = new AbortController();
+    const deadline = setTimeout(() => controller.abort(), 15000);
+    const request = fetch(key, { signal: controller.signal }).then(async response => {
+      if (response.status >= 500) throw new Error('页面暂时不可用');
+      return { ok: response.ok, html: await response.text() };
+    }).catch(error => {
+      pageRequests.delete(key);
+      throw error;
+    });
+    request.finally(() => clearTimeout(deadline)).catch(() => {});
+    pageRequests.set(key, request);
+    if (pageRequests.size > 8) pageRequests.delete(pageRequests.keys().next().value);
+  }
+  return pageRequests.get(key);
+}
+function prepareLink(event) {
+  if (navigator.connection?.saveData || /(^|-)2g$/.test(navigator.connection?.effectiveType || '')) return;
+  const link = event.target.closest('.entry-link, #main-nav a, .footer-links a, .brand');
+  if (!link || link.target || link.hasAttribute('download')) return;
+  const url = new URL(link.href);
+  if (url.origin === location.origin && url.pathname !== location.pathname) {
+    void requestPage(url).catch(() => {});
+  }
+}
+document.addEventListener('pointerover', prepareLink, { passive: true });
+document.addEventListener('touchstart', prepareLink, { passive: true });
+
 function notify(message) {
   clearTimeout(noticeTimer);
   status.hidden = false;
@@ -346,11 +378,23 @@ async function initFeed(main, restoredBatches) {
   let loadedBatches = 0;
   const observer = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
     if (entries.some(entry => entry.isIntersecting)) void loadMore();
-  }, { rootMargin: '0px 0px 160px' }) : null;
+  }, { rootMargin: '0px 0px 600px' }) : null;
   stopFeedLoading = () => {
     observer?.disconnect();
     controller.abort();
   };
+
+  let preparedBatch;
+  function prepareBatch() {
+    preparedBatch = fetch(new URL('feed.json', more.href), { signal: controller.signal })
+      .then(response => {
+        if (!response.ok) throw new Error('无法加载作品');
+        return response.json();
+      });
+    // A speculative request may fail before the reader reaches the next batch.
+    preparedBatch.catch(() => {});
+  }
+  if (!navigator.connection?.saveData) prepareBatch();
 
   async function appendBatch() {
     if (loading || more.hidden || controller.signal.aborted) return false;
@@ -360,22 +404,26 @@ async function initFeed(main, restoredBatches) {
     more.setAttribute('aria-disabled', 'true');
     more.textContent = '正在加载作品…';
     try {
-      const response = await fetch(more.href, { signal: controller.signal });
-      if (!response.ok) throw new Error('无法加载作品');
-      const next = new DOMParser().parseFromString(await response.text(), 'text/html');
+      if (!preparedBatch) prepareBatch();
+      const batch = await preparedBatch;
+      const next = new DOMParser().parseFromString(batch.html, 'text/html');
       if (controller.signal.aborted) return false;
-      const entries = next.querySelectorAll('.feed > .feed-entry');
+      const entries = next.querySelectorAll('.feed-entry');
       if (!entries.length) throw new Error('未找到更多作品');
-      const nextLink = next.querySelector('[data-feed-more]');
+      const nextLink = batch.next;
       feed.append(...entries);
       main.dataset.feedBatches = String(++loadedBatches);
       if (document.activeElement === more) entries[0].querySelector('.entry-link').focus();
-      if (nextLink) more.href = nextLink.getAttribute('href');
-      else more.hidden = true;
+      preparedBatch = undefined;
+      if (nextLink) {
+        more.href = nextLink;
+        if (!navigator.connection?.saveData) prepareBatch();
+      } else more.hidden = true;
       message.textContent = nextLink ? '' : '已显示全部作品。';
       refreshControls();
       return true;
     } catch {
+      preparedBatch = undefined;
       if (!controller.signal.aborted) message.textContent = '加载失败，请点击下方按钮重试。';
       return false;
     } finally {
@@ -439,9 +487,12 @@ async function navigate(url, { push = true, scrollY = 0, link } = {}) {
   }, 350);
   const deadline = setTimeout(() => controller.abort(), 15000);
   try {
-    const response = await fetch(url.pathname + url.search, { signal: controller.signal });
-    if (response.status >= 500) throw new Error('页面暂时不可用');
-    const next = new DOMParser().parseFromString(await response.text(), 'text/html');
+    const response = await Promise.race([
+      requestPage(url),
+      new Promise((_, reject) => controller.signal.addEventListener('abort',
+        () => reject(new DOMException('Navigation aborted', 'AbortError')), { once: true }))
+    ]);
+    const next = new DOMParser().parseFromString(response.html, 'text/html');
     if (navigation !== active) return;
     clearTimeout(deadline);
     const main = next.querySelector('main');
