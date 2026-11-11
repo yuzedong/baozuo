@@ -376,7 +376,7 @@ a[data-opening] { cursor: progress; }
   html { scroll-padding-top: calc(64px + env(safe-area-inset-top)); }
 
   .publication-copy { min-height: 132px; padding-block: 24px 36px; }
-  .publication h1 { font-size: clamp(1.75rem, 7.4vw, 2.125rem); line-height: 1.3; letter-spacing: .06em; transform: none; }
+  .publication h1 { font-size: clamp(1.75rem, 7.4vw, 2.125rem); line-height: 1.3; letter-spacing: .06em; transform: translateY(-12px); }
   .publication-home .publication-copy { min-height: 156px; }
   .publication-home h1 { font-size: clamp(2rem, 8.2vw, 2.5rem); letter-spacing: .06em; }
   .publication-detail::before { background: linear-gradient(180deg, rgb(0 0 0 / 65%), rgb(0 0 0 / 40%)); }
