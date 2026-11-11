@@ -1,6 +1,6 @@
 # 宝座乐团 · Throne Worship
 
-手机版优先的华语原创敬拜音乐站。使用 Node.js 生成静态页面，由 Cloudflare Pages 托管。浏览器直接从七牛 CDN 获取媒体。
+手机版优先的华语原创敬拜音乐站。使用 Node.js 生成静态页面，由 GitHub Actions 发布到香港服务器。浏览器直接从七牛 CDN 获取媒体。
 
 ## 本地预览
 
@@ -42,17 +42,7 @@ npm run preview  # 预览上一次构建的 dist/
 
 `audio`、`video`、`cover`、`lrc` 和收款码支持完整 HTTPS 地址。若多个文件使用同一个 CDN 前缀，可设置 `site.mediaBase`，例如 `https://media.example.com/worship/`，随后填写相对路径，例如 `music/song.mp3`。站点自带资源放在 `public/`，并使用 `/assets/...` 等根路径。
 
-音视频需使用浏览器可访问的地址。配置防盗链时允许正式域名以及实际使用的 Pages 预览域名。确认 CDN 返回正确的媒体类型，并支持字节范围请求 `206 Partial Content`，以便 iOS 播放和拖动进度。跨域 LRC 通过浏览器读取，七牛需返回允许站点来源的 `Access-Control-Allow-Origin` 响应头。七牛密钥和私有签名生成逻辑应留在服务器端。[七牛 CDN HTTPS 配置](https://developer.qiniu.com/fusion/4952/https-configuration)
-
-## GitHub 和 Cloudflare Pages
-
-1. 将本目录的源文件提交到 GitHub 仓库，默认生产分支用 `main`。
-2. 在 Cloudflare 的 **Workers & Pages** 创建 **Pages** 项目，选择从现有 Git 仓库导入并连接该仓库。
-3. 生产分支选 `main`，框架预设选 **None**，构建命令用 `npm run build`，输出目录用 `dist`，根目录留空。可设置 `NODE_VERSION=22`。
-4. 首次部署成功后，在项目的 **Custom domains** 添加 `baozuoyuetuan.com`。若域名尚未接入 Cloudflare，先将域名添加到同一账号并按控制台指引配置权威名称服务器。
-5. 提交到生产分支后 Pages 自动重新构建并发布。其他分支可用 Pages 的预览部署复核内容。
-
-[Cloudflare Pages Git 集成](https://developers.cloudflare.com/pages/get-started/git-integration/) · [绑定自定义域名](https://developers.cloudflare.com/pages/configuration/custom-domains/)
+音视频需使用浏览器可访问的地址。配置防盗链时允许正式域名以及实际使用的测试域名。确认 CDN 返回正确的媒体类型，并支持字节范围请求 `206 Partial Content`，以便 iOS 播放和拖动进度。跨域 LRC 通过浏览器读取，七牛需返回允许站点来源的 `Access-Control-Allow-Origin` 响应头。七牛密钥和私有签名生成逻辑应留在服务器端。[七牛 CDN HTTPS 配置](https://developer.qiniu.com/fusion/4952/https-configuration)
 
 ## 香港服务器自动发布
 
