@@ -348,7 +348,7 @@ const lists = [
   {
     path: '/', label: '首页', feedLabel: '最新发布', entries: feed, empty: '内容整理中。',
     description: '宝座乐团 Throne Worship，创作属于华语信徒的敬拜歌曲。聆听专辑、单曲与音乐影像。',
-    heroTitle: '把信仰写成歌', wrapper: 'home', beforeFeed: homeSearch
+    heroTitle: '以曲载道', wrapper: 'home', beforeFeed: homeSearch
   },
   { path: albumListPath, label: '专辑', entries: albumEntries, empty: '专辑整理中。' },
   { path: singleListPath, label: '单曲', entries: singleEntries, empty: '独立发行的单曲整理中。你可以先到专辑里逐首浏览。' }
