@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { dirname, resolve, sep } from 'node:path';
 import { icon } from '../public/icons.js';
 import { posterText, renderSharePoster } from './share-poster.mjs';
+import { uploadCodeAssets } from './upload-qiniu-code.mjs';
 
 const demo = process.argv.includes('--demo');
 const out = resolve('dist');
@@ -50,10 +51,20 @@ async function codeAvailable(file, contents) {
 
 let stylesheetUrl = `/style.css?v=${styleVersion}`;
 let scriptUrl = `/app.js?v=${appVersion}`;
-if (!demo && process.env.BAOZUO_CODE_CDN_ENABLED === 'true') {
-  const [hasStyle, hasApp, hasIcons] = await Promise.all(
-    Object.entries(codeAssets).map(([file, contents]) => codeAvailable(file, contents))
-  );
+const uploadCode = !demo && process.env.BAOZUO_QINIU_UPLOAD_ENABLED === 'true';
+if (uploadCode || (!demo && process.env.BAOZUO_CODE_CDN_ENABLED === 'true')) {
+  if (uploadCode) await uploadCodeAssets(codeAssets);
+  const checkCode = () => Promise.all(
+    Object.entries(codeAssets).map(([file, contents]) => codeAvailable(file, contents)));
+  let available = await checkCode();
+  for (let attempt = 0; uploadCode && available.includes(false) && attempt < 3; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
+    available = await checkCode();
+  }
+  if (uploadCode && available.includes(false)) {
+    throw new Error('七牛上的新版本未通过内容或跨域校验，终止发布');
+  }
+  const [hasStyle, hasApp, hasIcons] = available;
   if (hasStyle) stylesheetUrl = new URL('code/' + styleFile, imageCdnBase).href;
   if (hasApp && hasIcons) scriptUrl = new URL('code/' + appFile, imageCdnBase).href;
   console.log(`CSS: ${hasStyle ? '七牛 CDN' : '本站'}，JavaScript: ${hasApp && hasIcons ? '七牛 CDN' : '本站'}`);

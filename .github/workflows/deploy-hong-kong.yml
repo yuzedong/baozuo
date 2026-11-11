@@ -30,6 +30,11 @@ jobs:
         env:
           BAOZUO_IMAGE_CDN_ENABLED: ${{ vars.BAOZUO_IMAGE_CDN_ENABLED }}
           BAOZUO_CODE_CDN_ENABLED: ${{ vars.BAOZUO_CODE_CDN_ENABLED }}
+          BAOZUO_QINIU_UPLOAD_ENABLED: ${{ vars.BAOZUO_QINIU_UPLOAD_ENABLED }}
+          QINIU_BUCKET: ${{ vars.QINIU_BUCKET }}
+          QINIU_UPLOAD_HOST: ${{ vars.QINIU_UPLOAD_HOST }}
+          QINIU_ACCESS_KEY: ${{ secrets.QINIU_ACCESS_KEY }}
+          QINIU_SECRET_KEY: ${{ secrets.QINIU_SECRET_KEY }}
       - name: Upload and activate release
         env:
           SSH_HOST: ${{ vars.HK_SSH_HOST }}

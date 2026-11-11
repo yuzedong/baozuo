@@ -44,7 +44,13 @@ npm run preview  # 预览上一次构建的 dist/
 
 `content/cdn-images.json` 记录迁移图片的原地址和七牛对象键。上传时将对象键放在目标空间的 `site-static/` 前缀下。确认对应 URL 可以访问后，在 GitHub 仓库设置变量 `BAOZUO_IMAGE_CDN_ENABLED=true`，重新运行香港发布工作流。该变量也可用于本地构建。新增图片可直接填写上传后的七牛地址。
 
-启用 `BAOZUO_CODE_CDN_ENABLED=true` 后，构建会核对七牛上的 CSS 和 JavaScript 版本，确认内容及响应头正确后使用 CDN。修改代码后，构建会把带内容版本的文件生成到 `dist/site-static/code/`。将该目录内的文件上传到七牛的 `site-static/code/` 后重新发布。新版本尚未上传或校验失败时，对应资源由本站提供。
+在 GitHub 的 **Settings → Secrets and variables → Actions** 配置七牛自动上传：
+
+- **Secrets** 中添加 `QINIU_ACCESS_KEY` 和 `QINIU_SECRET_KEY`。使用只获授权上传目标空间的七牛 IAM 子账号。
+- **Variables** 中添加 `QINIU_BUCKET`（绑定 `baozuo.njwsp.com` 的空间名）和 `QINIU_UPLOAD_HOST`（该空间所在区域的七牛上传域名，只填写主机名）。[七牛存储区域及上传域名](https://developer.qiniu.com/kodo/1671/region-endpoint-fq)
+- 设置 `BAOZUO_QINIU_UPLOAD_ENABLED=true`。以后推送 `main` 时，工作流会上传新版本的 CSS 和 JavaScript 到 `site-static/code/`，校验 CDN 上的内容、类型和脚本跨域响应，通过后再发布到香港服务器。
+
+版本文件名由内容生成。已存在的文件会跳过覆盖并参与校验。若本次上传或校验失败，当前线上版本继续服务。未启用自动上传时，`BAOZUO_CODE_CDN_ENABLED=true` 仍可引用已上传的版本，缺失时使用本站文件。
 
 音视频需使用浏览器可访问的地址。配置防盗链时允许正式域名以及实际使用的测试域名。确认 CDN 返回正确的媒体类型，并支持字节范围请求 `206 Partial Content`，以便 iOS 播放和拖动进度。跨域 LRC 通过浏览器读取，七牛需返回允许站点来源的 `Access-Control-Allow-Origin` 响应头。七牛密钥和私有签名生成逻辑应留在服务器端。[七牛 CDN HTTPS 配置](https://developer.qiniu.com/fusion/4952/https-configuration)
 
