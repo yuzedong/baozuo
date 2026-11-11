@@ -123,7 +123,7 @@ function rows(items, album = '') {
   </li>`).join('')}</ol>`;
 }
 
-const navLinks = [['/', '首页'], [singleListPath, '单曲'], [albumListPath, '专辑'], ['/about/', '关于'], ['/support/', '支持我们']];
+const navLinks = [['/', '首页'], [singleListPath, '单曲'], [albumListPath, '专辑'], ['/about/', '关于'], ['/support/', '支持']];
 const mastheadArt = {
   [singleListPath]: 'singles',
   [albumListPath]: 'albums',
