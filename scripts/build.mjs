@@ -648,6 +648,11 @@ for (const post of posts) {
 }
 
 pages.push({
+  path: '/help/', title: '敬拜投影使用帮助',
+  description: '敬拜投影操作指南，涵盖连接大屏、查找经文、合并清单、投影诗歌和歌谱，以及多屏和 PPT 切换。',
+  heroArt: 'detail',
+  body: await readFile('content/projection-help.html', 'utf8')
+}, {
   path: '/videos/', title: '敬拜影像', description: '观看宝座乐团的音乐视频与敬拜影像。',
   body: `<div class="wrap section interior">
   <div class="video-grid">${videos.map(track => `<article class="video-panel" id="${videoId(track)}">
