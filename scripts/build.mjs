@@ -198,18 +198,18 @@ const mastheadArt = {
 };
 function layout({
   path, navPath = path, title, description, body, image = '/assets/spring.jpg', error = false,
-  heroTitle = title, heroArt = mastheadArt[navPath] || 'home'
+  heroTitle = title, heroArt = mastheadArt[navPath] || 'home', standalone = false
 }) {
   const canonical = new URL(path, site.domain).href;
   const nav = navLinks.map(([href, label]) => {
     const current = href === path ? 'page' : 'location';
     return `<a href="${href}"${href === navPath ? ` aria-current="${current}"` : ''}>${label}</a>`;
   }).join('');
-  const fullTitle = path === '/' ? '宝座乐团｜Throne Worship' : title + '｜宝座乐团';
+  const fullTitle = standalone ? title : path === '/' ? '宝座乐团｜Throne Worship' : title + '｜宝座乐团';
   const publicationClass = navPath === '/' && heroArt === 'home' ? ' publication-home'
     : heroArt === 'detail' ? ' publication-detail' : '';
   return `<!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN"${standalone ? ' class="standalone-page"' : ''}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -221,11 +221,12 @@ function layout({
   <meta property="og:description" content="${esc(description)}">
   <meta property="og:image" content="${esc(new URL(imageUrl(image), site.domain).href)}">
   <meta property="og:url" content="${esc(canonical)}">
-  <link rel="icon" href="${esc(imageUrl('/assets/crown.svg'))}" type="image/svg+xml">
+  ${standalone ? '' : `<link rel="icon" href="${esc(imageUrl('/assets/crown.svg'))}" type="image/svg+xml">`}
   <link rel="stylesheet" href="${stylesheetUrl}">
-  <script type="module" src="${scriptUrl}"></script>
+  ${standalone ? '' : `<script type="module" src="${scriptUrl}"></script>`}
 </head>
 <body>
+  ${standalone ? `<main id="main">${body}</main>` : `
   <a class="skip" href="#main">跳至内容</a>
   <header class="site-header">
     <div class="wrap header-inner">
@@ -262,6 +263,7 @@ function layout({
   <audio id="site-audio" preload="metadata" hidden></audio>
   <div class="navigation-feedback" role="status"><span></span></div>
   <div class="status" role="status" hidden></div>
+  `}
 </body>
 </html>`;
 }
@@ -650,7 +652,7 @@ for (const post of posts) {
 pages.push({
   path: '/help/', title: '敬拜投影使用帮助',
   description: '敬拜投影操作指南，涵盖连接大屏、查找经文、合并清单、投影诗歌和歌谱，以及多屏和 PPT 切换。',
-  heroArt: 'detail',
+  standalone: true, image: '/assets/help/projection-console.png',
   body: await readFile('content/projection-help.html', 'utf8')
 }, {
   path: '/videos/', title: '敬拜影像', description: '观看宝座乐团的音乐视频与敬拜影像。',
