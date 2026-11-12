@@ -650,9 +650,9 @@ for (const post of posts) {
 }
 
 pages.push({
-  path: '/help/', title: '敬拜投影使用帮助',
-  description: '敬拜投影操作指南，涵盖连接大屏、查找经文、合并清单、投影诗歌和歌谱，以及多屏和 PPT 切换。',
-  standalone: true, image: '/assets/help/projection-console.png',
+  path: '/help/', title: '敬拜投影软件使用帮助',
+  description: '敬拜投影软件桌面客户端操作指南，涵盖选择投影屏幕、查找经文、合并清单、投影诗歌和歌谱，以及多屏和 PPT 切换。',
+  standalone: true, image: '/assets/help/04-preview-push.webp',
   body: await readFile('content/projection-help.html', 'utf8')
 }, {
   path: '/videos/', title: '敬拜影像', description: '观看宝座乐团的音乐视频与敬拜影像。',
