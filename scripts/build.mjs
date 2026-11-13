@@ -651,7 +651,7 @@ for (const post of posts) {
 
 pages.push({
   path: '/help/', title: '敬拜投影软件使用帮助',
-  description: '敬拜投影软件桌面客户端操作指南，涵盖选择投影屏幕、查找经文、合并清单、投影诗歌和歌谱，以及多屏和 PPT 切换。',
+  description: '敬拜投影软件桌面客户端操作指南。操作员在自己的屏幕上查找和预览经文或歌谱，确认后一键投送到指定屏幕。',
   standalone: true, image: '/assets/help/04-preview-push.webp',
   body: await readFile('content/projection-help.html', 'utf8')
 }, {

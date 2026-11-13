@@ -2,6 +2,34 @@ const topics = document.querySelector('.help-topics');
 const tabs = [...topics.querySelectorAll('a')];
 const panels = tabs.map(tab => document.getElementById(tab.hash.slice(1)));
 const sideNavigation = matchMedia('(min-width: 920px)');
+const tutorial = document.getElementById('video-tutorial');
+const video = tutorial.querySelector('video');
+const playButton = tutorial.querySelector('.help-video-play');
+const videoError = tutorial.querySelector('.help-video-error');
+
+playButton.hidden = false;
+video.controls = false;
+
+playButton.addEventListener('click', async () => {
+  videoError.hidden = true;
+  if (video.error) video.load();
+  try {
+    await video.play();
+  } catch (error) {
+    if (error.name !== 'AbortError') videoError.hidden = false;
+  }
+});
+
+video.addEventListener('playing', () => {
+  video.controls = true;
+  if (document.activeElement === playButton) video.focus({ preventScroll: true });
+  playButton.hidden = true;
+});
+
+video.addEventListener('error', () => {
+  videoError.hidden = false;
+  playButton.hidden = false;
+});
 
 function updateOrientation() {
   topics.setAttribute('aria-orientation', sideNavigation.matches ? 'vertical' : 'horizontal');
@@ -10,9 +38,11 @@ function updateOrientation() {
 function showTab(index) {
   tabs.forEach((tab, position) => {
     const selected = position === index;
+    const panel = panels[position];
     tab.setAttribute('aria-selected', String(selected));
     tab.tabIndex = selected ? 0 : -1;
-    panels[position].hidden = !selected;
+    if (!selected && !panel.hidden) panel.querySelector('video')?.pause();
+    panel.hidden = !selected;
   });
 }
 
