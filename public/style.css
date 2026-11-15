@@ -211,6 +211,7 @@ html { scroll-padding-top: calc(80px + env(safe-area-inset-top)); }
   font-size: .9375rem;
   line-height: 1.75;
 }
+.help-intro-copy p + p { margin-top: .65em; }
 .help-intro-break { display: none; }
 .help-topics {
   display: flex;
