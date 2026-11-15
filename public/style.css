@@ -159,6 +159,22 @@ html { scroll-padding-top: calc(80px + env(safe-area-inset-top)); }
   border-radius: clamp(14px, 2vw, 20px);
   background: #fff;
 }
+.help-heading-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+.help-download {
+  display: grid;
+  gap: 6px;
+}
+.help-download p {
+  color: var(--help-caption);
+  font-size: .8125rem;
+  line-height: 1.5;
+}
 .help-title {
   display: flex;
   align-items: center;
