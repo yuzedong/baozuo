@@ -1,17 +1,20 @@
 import { readFile, writeFile, mkdir, cp, rm, stat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { dirname, resolve, sep } from 'node:path';
+import { basename, dirname, extname, resolve, sep } from 'node:path';
 import { icon } from '../public/icons.js';
 import { posterText, renderSharePoster } from './share-poster.mjs';
-import { uploadCodeAssets } from './upload-qiniu-code.mjs';
+import { uploadQiniuAssets } from './upload-qiniu-code.mjs';
 
 const demo = process.argv.includes('--demo');
 const out = resolve('dist');
 const cdnImages = JSON.parse(await readFile('content/cdn-images.json', 'utf8'));
 const imageCdnEnabled = process.env.BAOZUO_IMAGE_CDN_ENABLED === 'true';
 const imageCdnBase = 'https://baozuo.njwsp.com/site-static/';
-const imageUrl = source => imageCdnEnabled && Object.hasOwn(cdnImages, source)
-  ? new URL(cdnImages[source], imageCdnBase).href : source;
+const helpImageUrls = new Map();
+const imageUrl = source => helpImageUrls.get(source) ?? (
+  imageCdnEnabled && Object.hasOwn(cdnImages, source)
+    ? new URL(cdnImages[source], imageCdnBase).href : source
+);
 const style = (await readFile('public/style.css', 'utf8')).replace(
   /url\('([^']+)'\)/g, (_, source) => `url('${imageUrl(source)}')`
 );
@@ -25,8 +28,48 @@ const cdnApp = app.replace("from './icons.js'", `from './${iconsFile}'`);
 const styleFile = `style.${styleVersion}.css`;
 const appFile = `app.${version(cdnApp)}.js`;
 const codeAssets = { [styleFile]: style, [appFile]: cdnApp, [iconsFile]: icons };
+const helpImagePath = /\/assets\/help\/[\w.-]+\.(?:webp|png)(?=")/g;
+const helpContent = await readFile('content/projection-help.html', 'utf8');
 const catalog = JSON.parse(await readFile('content/catalog.json', 'utf8'));
 const { site, tracks, albums, posts = [] } = catalog;
+
+async function publishHelpImages() {
+  const images = await Promise.all([...new Set(helpContent.match(helpImagePath))].map(async source => {
+    const contents = await readFile('public' + source);
+    const extension = extname(source);
+    const path = `help/${basename(source, extension)}.${version(contents)}${extension}`;
+    const type = extension === '.webp' ? 'image/webp' : 'image/png';
+    return { source, path, contents, type };
+  }));
+  await uploadQiniuAssets(Object.fromEntries(images.map(image => [image.path, image])));
+
+  let pending = images;
+  for (let attempt = 0; pending.length && attempt < 4; attempt++) {
+    if (attempt) await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+    const checks = await Promise.all(pending.map(async image => {
+      const url = new URL(image.path, imageCdnBase);
+      try {
+        const response = await fetch(url, {
+          headers: { Referer: new URL('/', site.domain).href },
+          signal: AbortSignal.timeout(8000)
+        });
+        const bytes = Buffer.from(await response.arrayBuffer());
+        if (response.ok && response.headers.get('content-type')?.split(';')[0] === image.type && bytes.equals(image.contents)) {
+          helpImageUrls.set(image.source, url.href);
+          return null;
+        }
+      } catch (error) {
+        console.warn(`帮助页图片校验请求失败：${image.path}（${error.message}）`);
+      }
+      return image;
+    }));
+    pending = checks.filter(Boolean);
+  }
+  if (pending.length) {
+    throw new Error(`七牛帮助页图片未通过校验：${pending.map(image => image.path).join('、')}`);
+  }
+  console.log(`帮助页：${images.length} 张图片已通过七牛 CDN 校验`);
+}
 
 async function codeAvailable(file, contents) {
   const origin = new URL(site.domain).origin;
@@ -57,17 +100,21 @@ async function codeAvailable(file, contents) {
 
 let stylesheetUrl = `/style.css?v=${styleVersion}`;
 let scriptUrl = `/app.js?v=${appVersion}`;
-const uploadCode = !demo && process.env.BAOZUO_QINIU_UPLOAD_ENABLED === 'true';
-if (uploadCode || (!demo && process.env.BAOZUO_CODE_CDN_ENABLED === 'true')) {
-  if (uploadCode) await uploadCodeAssets(codeAssets);
+const uploadAssets = !demo && process.env.BAOZUO_QINIU_UPLOAD_ENABLED === 'true';
+if (uploadAssets || (!demo && process.env.BAOZUO_CODE_CDN_ENABLED === 'true')) {
+  if (uploadAssets) {
+    await uploadQiniuAssets(Object.fromEntries(Object.entries(codeAssets).map(([file, contents]) => [
+      'code/' + file, { contents, type: file.endsWith('.css') ? 'text/css' : 'application/javascript' }
+    ])));
+  }
   const checkCode = () => Promise.all(
     Object.entries(codeAssets).map(([file, contents]) => codeAvailable(file, contents)));
   let available = await checkCode();
-  for (let attempt = 0; uploadCode && available.includes(false) && attempt < 3; attempt++) {
+  for (let attempt = 0; uploadAssets && available.includes(false) && attempt < 3; attempt++) {
     await new Promise(resolve => setTimeout(resolve, 2000 * (attempt + 1)));
     available = await checkCode();
   }
-  if (uploadCode && available.includes(false)) {
+  if (uploadAssets && available.includes(false)) {
     throw new Error('七牛上的新版本未通过内容或跨域校验，终止发布');
   }
   const [hasStyle, hasApp, hasIcons] = available;
@@ -75,6 +122,7 @@ if (uploadCode || (!demo && process.env.BAOZUO_CODE_CDN_ENABLED === 'true')) {
   if (hasApp && hasIcons) scriptUrl = new URL('code/' + appFile, imageCdnBase).href;
   console.log(`CSS: ${hasStyle ? '七牛 CDN' : '本站'}，JavaScript: ${hasApp && hasIcons ? '七牛 CDN' : '本站'}`);
 }
+if (uploadAssets) await publishHelpImages();
 const bankTransfers = site.bankTransfers || [];
 if (demo) {
   const example = JSON.parse(await readFile('content/demo.json', 'utf8'));
@@ -653,7 +701,7 @@ pages.push({
   path: '/help/', title: '敬拜投影软件使用帮助',
   description: '敬拜投影软件桌面客户端操作指南。操作员在自己的屏幕上查找和预览经文或歌谱，确认后一键投送到指定屏幕。',
   standalone: true, image: '/assets/help/04-preview-push.webp',
-  body: await readFile('content/projection-help.html', 'utf8')
+  body: helpContent.replace(helpImagePath, imageUrl)
 }, {
   path: '/videos/', title: '敬拜影像', description: '观看宝座乐团的音乐视频与敬拜影像。',
   body: `<div class="wrap section interior">

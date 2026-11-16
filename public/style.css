@@ -211,6 +211,7 @@ html { scroll-padding-top: calc(80px + env(safe-area-inset-top)); }
   font-size: .9375rem;
   line-height: 1.75;
 }
+.help-intro-copy p + p { margin-top: .65em; }
 .help-intro-break { display: none; }
 .help-topics {
   display: flex;
@@ -343,29 +344,6 @@ html { scroll-padding-top: calc(80px + env(safe-area-inset-top)); }
 .help-figure img { height: auto; border: 1px solid var(--help-line); border-radius: inherit; }
 .help-figure a:hover img { border-color: var(--help-accent); }
 .help-figure figcaption { margin-top: 8px; color: var(--help-caption); font-size: .8125rem; line-height: 1.6; }
-.help-figure .help-crop {
-  position: relative;
-  display: block;
-  overflow: hidden;
-  aspect-ratio: var(--crop-width) / var(--crop-height);
-  border: 1px solid var(--help-line);
-}
-.help-crop-preview { --crop-width: 528; --crop-height: 470; --crop-top: 8; }
-.help-crop-verses { --crop-width: 581; --crop-height: 290; --crop-top: 12; }
-.help-crop-import { --crop-width: 378; --crop-height: 75; --crop-top: 522; }
-.help-crop-first-projection { --crop-width: 1440; --crop-height: 580; --crop-top: 0; }
-.help-crop-hymn-search { --crop-width: 1440; --crop-height: 365; --crop-top: 0; }
-.help-crop-hymn-format { --crop-width: 1440; --crop-height: 636; --crop-top: 0; }
-.help-crop img {
-  position: absolute;
-  inset-inline-start: calc(-100% * var(--crop-left, 0) / var(--crop-width));
-  top: calc(-100% * var(--crop-top) / var(--crop-height));
-  width: calc(100% * var(--crop-source-width, var(--crop-width)) / var(--crop-width));
-  max-width: none;
-  border: 0;
-  border-radius: 0;
-}
-.help-figure .help-crop:hover { border-color: var(--help-accent); }
 @media (max-width: 420px) {
   .help-topics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .help-topics a { grid-column: span 2; padding-inline: 3px; font-size: .875rem; }
@@ -397,13 +375,10 @@ html { scroll-padding-top: calc(80px + env(safe-area-inset-top)); }
     position: relative;
     display: block;
     overflow: hidden;
-    aspect-ratio: 420 / 72;
+    aspect-ratio: 420 / 58;
     border: 1px solid var(--help-line);
   }
-  .help-crop-search img { position: absolute; inset: 0 auto auto 0; width: calc(100% * 1243 / 420); max-width: none; border: 0; }
-  .help-crop-first-projection { --crop-source-width: 1440; --crop-width: 515; --crop-height: 440; --crop-left: 905; --crop-top: 120; }
-  .help-crop-hymn-search { --crop-source-width: 1440; --crop-width: 370; --crop-height: 240; --crop-left: 20; --crop-top: 118; }
-  .help-crop-hymn-format { --crop-source-width: 1440; --crop-width: 675; --crop-height: 518; --crop-left: 741; --crop-top: 119; }
+  .help-crop-search img { position: absolute; inset: 0 auto auto 0; width: calc(100% * 1075 / 420); max-width: none; border: 0; }
 }
 .inner-section { margin-top: 28px; }
 .inner-section > h2 { margin-bottom: 12px; }
