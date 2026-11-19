@@ -7,6 +7,38 @@ const video = tutorial.querySelector('video');
 const playButton = tutorial.querySelector('.help-video-play');
 const videoError = tutorial.querySelector('.help-video-error');
 
+for (const chapter of tutorial.querySelectorAll('[data-video-time]')) {
+  chapter.addEventListener('click', async () => {
+    const target = Number(chapter.dataset.videoTime);
+    if (!Number.isFinite(target) || target < 0) return;
+    videoError.hidden = true;
+    try {
+      if (video.readyState < 1) {
+        await new Promise((resolve, reject) => {
+          const done = () => { cleanup(); resolve(); };
+          const fail = () => { cleanup(); reject(new Error('视频无法加载')); };
+          const timer = setTimeout(fail, 15000);
+          const cleanup = () => { clearTimeout(timer); video.removeEventListener('loadedmetadata', done); video.removeEventListener('error', fail); };
+          video.addEventListener('loadedmetadata', done);
+          video.addEventListener('error', fail);
+          video.load();
+        });
+      }
+      video.currentTime = target;
+      await video.play();
+    } catch { videoError.hidden = false; }
+  });
+}
+video.addEventListener('timeupdate', () => {
+  const chapters = [...tutorial.querySelectorAll('[data-video-time]')];
+  const active = chapters.findLast(chapter => Number(chapter.dataset.videoTime) <= video.currentTime);
+  chapters.forEach(chapter => {
+    if (chapter === active) chapter.setAttribute('aria-current', 'true');
+    else chapter.removeAttribute('aria-current');
+  });
+});
+
+
 playButton.hidden = false;
 video.controls = false;
 

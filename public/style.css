@@ -687,3 +687,19 @@ a[data-opening] { cursor: progress; }
 @media (max-width: 420px) {
   .entry-fact-optional { display: none; }
 }
+
+/* Updated projection guide: uncommon details stay out of the primary reading flow. */
+.help-guide details { margin-top: 18px; padding: 14px 0; border-top: 1px solid var(--help-line); }
+.help-guide details > summary { cursor: pointer; color: var(--help-accent); font-weight: 600; line-height: 1.6; }
+.help-guide details > p { margin-top: 12px; }
+.help-guide .help-version-note { font-size: .8125rem; color: var(--help-caption); }
+.help-guide table { width: 100%; margin-block: 18px; border-collapse: collapse; font-size: .875rem; overflow-wrap: anywhere; }
+.help-guide :is(th,td) { padding: 10px 8px; border-bottom: 1px solid var(--help-line); vertical-align: top; text-align: left; line-height: 1.6; }
+.help-guide th { color: var(--help-accent); font-weight: 600; }
+.help-guide code { overflow-wrap: anywhere; white-space: normal; }
+.help-video-chapters { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px 12px; margin-top: 20px; }
+.help-video-chapters button { display: flex; align-items: baseline; gap: 10px; min-height: 44px; padding: 10px; border: 0; border-radius: 6px; background: transparent; color: var(--help-muted); text-align: left; cursor: pointer; font: inherit; font-size: .875rem; }
+.help-video-chapters time { color: var(--help-caption); font-variant-numeric: tabular-nums; }
+.help-video-chapters button:hover, .help-video-chapters button[aria-current=true] { background: var(--help-wash); color: var(--help-accent); }
+.help-video-chapters button:focus-visible { outline: 2px solid var(--help-accent); outline-offset: 1px; }
+@media(max-width:600px) { .help-video-chapters { grid-template-columns: minmax(0,1fr); } .help-guide :is(th,td) { padding-inline: 4px; font-size: .8125rem; } }
